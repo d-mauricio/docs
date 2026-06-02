@@ -1,0 +1,91 @@
+---
+title: "Errors And Webhooks"
+description: "Handle Jurat API errors and recovery status notifications."
+---
+
+## Error Shape
+
+Current responses may include:
+
+```json
+{
+  "error": "Request failed"
+}
+```
+
+or:
+
+```json
+{
+  "reason": "Invalid signer"
+}
+```
+
+SDK methods throw an `Error` using the backend-provided `error` or `reason` value when available.
+
+## Common Error Codes
+
+Jurat API errors may include codes such as:
+
+- `INVALID_SIGNATURE`
+- `VALIDATION_ERROR`
+- `CASE_NOT_FOUND`
+- `CASE_ALREADY_EXISTS`
+- `CASE_NOT_INITIATED`
+- `CASE_NOT_PENDING`
+- `UNSUPPORTED_CHAIN`
+- `RATE_LIMITED`
+- `UNAUTHORIZED`
+- `INTERNAL_ERROR`
+
+## Webhooks
+
+Webhooks notify integrators when long-running recovery state changes.
+
+Recommended endpoint format:
+
+```http
+POST https://partner.example.com/webhooks/jurat
+```
+
+Recommended event envelope:
+
+```json
+{
+  "id": "evt_abc123",
+  "type": "recovery_case.executed",
+  "createdAt": "2026-06-01T12:00:00.000Z",
+  "data": {
+    "caseId": "case-uuid",
+    "jrcHash": "0x...",
+    "status": "executed",
+    "txHash": "0x..."
+  }
+}
+```
+
+## Event Types
+
+- `recovery_case.created`
+- `recovery_case.pending`
+- `recovery_case.rejected`
+- `recovery_case.executed`
+- `recovery_case.action_required`
+
+## Webhook Security
+
+Each webhook should include:
+
+```txt
+Jurat-Webhook-Id
+Jurat-Webhook-Timestamp
+Jurat-Webhook-Signature
+```
+
+The signature should be an HMAC over:
+
+```txt
+{timestamp}.{rawBody}
+```
+
+Partners should reject old timestamps and replayed event IDs.

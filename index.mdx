@@ -1,0 +1,108 @@
+---
+title: "Jurat Recovery Integration Guide"
+description: "Integrate Jurat recovery and probate into a wallet or web3 application."
+---
+
+Jurat gives wallets and web3 applications a recovery and probate layer for self-custodied assets.
+
+You can integrate Jurat in three ways:
+
+- Link users to the hosted app at [app.jurat.io](https://app.jurat.io).
+- Use the TypeScript SDK to embed Jurat flows in your own wallet or app.
+- Call the `/api/v1` endpoints directly from your frontend or backend.
+
+## What Jurat Provides
+
+- Recovery case APIs for Jurat Legal Code creation, duplicate checks, court metadata submission, and case status tracking.
+- Estate and probate APIs for estate profiles, beneficiaries, privacy codes, terms acceptance, and will uploads.
+- A TypeScript SDK that wraps API calls and builds the canonical wallet-signature messages expected by the backend.
+
+## Base URLs
+
+Production API:
+
+```txt
+https://api.jurat.io/api/v1
+```
+
+Hosted app:
+
+```txt
+https://app.jurat.io
+```
+
+Developer docs:
+
+```txt
+https://docs.jurat.io
+```
+
+## Integration Options
+
+### Link To The Hosted App
+
+Send users to:
+
+```txt
+https://app.jurat.io
+```
+
+This is the fastest path if you want to support Jurat recovery and probate without building a custom user experience.
+
+### Embed Jurat With The SDK
+
+Use the SDK to build Jurat flows inside your own app while relying on Jurat's backend for recovery case creation, probate records, court metadata, and fulfillment status.
+
+```bash
+npm install @jurat/recovery-sdk
+```
+
+### Call The APIs Directly
+
+Call the stable API namespaces directly:
+
+```txt
+/api/v1/recovery-cases
+/api/v1/estate-profiles
+```
+
+Direct API access is best for wallets, custodians, and account-abstraction providers with custom backend workflows.
+
+## Signing Model
+
+Most public integration endpoints use wallet signatures to prove user intent.
+
+The SDK expects this minimal signer interface:
+
+```ts
+type JuratSigner = {
+  address: string;
+  signMessage(message: string): Promise<string>;
+};
+```
+
+This shape works with ethers, viem, wagmi, Privy, embedded wallets, RainbowKit, account-abstraction clients, and custody providers.
+
+## Recovery Flow
+
+The recovery flow has three phases:
+
+1. Create a recovery intent and generate a Jurat Legal Code hash.
+2. File the legal process using the generated hash.
+3. Submit court-order metadata so Jurat can verify the court docket and execute recovery on-chain.
+
+## Estate And Probate Flow
+
+Estate profiles let users prepare probate information connected to a wallet:
+
+- Fetch or create an estate profile.
+- Add signed beneficiaries.
+- Create probate privacy codes.
+- Upload signed will documents.
+- Resolve privacy codes for probate discovery workflows.
+
+## Next Steps
+
+- Start with the [SDK Quickstart](/sdk-quickstart) if you want to embed Jurat into a wallet or app.
+- Start with the [API Quickstart](/api-quickstart) if you want to call the API directly.
+- Read [Signing](/signing) before implementing direct API calls.

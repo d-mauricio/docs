@@ -1,0 +1,61 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Jurat Developer Docs",
+  "colors": {
+    "primary": "#010A0A",
+    "light": "#F1F1F1",
+    "dark": "#010A0A"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": [
+              "index",
+              "api-quickstart",
+              "sdk-quickstart"
+            ]
+          },
+          {
+            "group": "Core concepts",
+            "pages": [
+              "signing",
+              "errors-and-webhooks"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Reference",
+            "openapi": {
+              "source": "api-reference/openapi.yaml",
+              "directory": "api-reference"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Launch App",
+        "href": "https://app.jurat.io"
+      },
+      {
+        "label": "Jurat",
+        "href": "https://jurat.io"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {}
+  }
+}

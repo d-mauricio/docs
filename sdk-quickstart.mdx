@@ -1,0 +1,135 @@
+---
+title: "SDK Quickstart"
+description: "Use the Jurat TypeScript SDK to create recovery and probate workflows."
+---
+
+Install the SDK:
+
+```bash
+npm install @jurat/recovery-sdk
+```
+
+## 1. Create A Client
+
+```ts
+import { JuratRecoveryClient } from "@jurat/recovery-sdk";
+
+const jurat = new JuratRecoveryClient({
+  baseUrl: "https://api.jurat.io/api/v1",
+});
+```
+
+## 2. Provide A Signer
+
+The SDK accepts a minimal signer interface:
+
+```ts
+type JuratSigner = {
+  address: string;
+  signMessage(message: string): Promise<string>;
+};
+```
+
+Example:
+
+```ts
+const signer = {
+  address: walletAddress,
+  signMessage: message => wallet.signMessage(message),
+};
+```
+
+This shape works with ethers, viem, wagmi, Privy, embedded wallets, and custody providers.
+
+## 3. Create A Recovery Case
+
+```ts
+import {
+  encodeErc20Transfer,
+  signRecoveryIntent,
+} from "@jurat/recovery-sdk";
+
+const intent = {
+  rec: {
+    lostAccount: "0xLostSmartAccount",
+    recoveryAccount: signer.address,
+    chainId: 8453,
+    reasonForRecovery: "lost key",
+    email: "user@example.com",
+  },
+  txs: [
+    {
+      dest: "0xTokenContract",
+      value: "0",
+      data: encodeErc20Transfer(signer.address, 1000000n),
+    },
+  ],
+};
+
+const duplicate = await jurat.recoveryCaseExists(intent);
+
+if (!duplicate.caseExists) {
+  const signedIntent = await signRecoveryIntent(signer, intent);
+  const created = await jurat.createRecoveryCase(signedIntent);
+  console.log(created.caseId, created.jrcHash);
+}
+```
+
+## 4. Submit Court Metadata
+
+```ts
+import { signCourtInfo } from "@jurat/recovery-sdk";
+
+const courtInfo = {
+  title: null,
+  fullCaseNumber: "1:26-cv-00001",
+  courtId: "candc",
+  docketNumber: 42,
+};
+
+const signedCourtInfo = await signCourtInfo(signer, courtInfo);
+await jurat.submitCourtOrder(jrcHash, signedCourtInfo);
+```
+
+## 5. Load Case Status
+
+```ts
+const detail = await jurat.getRecoveryCase(caseId);
+
+console.log(detail.recovery?.status);
+console.log(detail.recovery?.txHash);
+```
+
+## 6. Load An Estate Profile
+
+```ts
+const profile = await jurat.getEstateProfile(signer.address);
+```
+
+## 7. Add A Beneficiary
+
+```ts
+import { signBeneficiary } from "@jurat/recovery-sdk";
+
+const beneficiary = await signBeneficiary(signer, {
+  name: "Jane",
+  surname: "Doe",
+  smartAccountAddress: "0xBeneficiarySmartAccount",
+  usCitizenId: "123456789",
+  email: "beneficiary@example.com",
+});
+
+await jurat.createBeneficiary(signer.address, beneficiary);
+```
+
+## Error Handling
+
+SDK methods throw `Error` when the API returns a non-2xx response.
+
+```ts
+try {
+  await jurat.createRecoveryCase(signedIntent);
+} catch (error) {
+  console.error(error);
+}
+```

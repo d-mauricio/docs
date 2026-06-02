@@ -1,0 +1,190 @@
+openapi: 3.1.0
+info:
+  title: Jurat Recovery Integration API
+  version: 1.0.0
+  description: Versioned API for wallets and web3 apps integrating Jurat recovery and probate.
+servers:
+  - url: https://api.jurat.io/api/v1
+    description: Production
+  - url: http://localhost:3000/api/v1
+    description: Local development
+paths:
+  /health:
+    get:
+      summary: Check API health
+      responses:
+        "200":
+          description: Service is available
+  /recovery-cases/jrc-hash:
+    post:
+      summary: Calculate the expected JRC hash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecoveryIntent"
+      responses:
+        "200":
+          description: Calculated hash
+  /recovery-cases/exists:
+    post:
+      summary: Check whether a recovery intent already exists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecoveryIntent"
+      responses:
+        "200":
+          description: Duplicate lookup result
+  /recovery-cases:
+    get:
+      summary: List recovery cases
+      responses:
+        "200":
+          description: Recovery cases
+    post:
+      summary: Create a signed recovery case
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/RecoveryIntent"
+                - type: object
+                  required: [sig]
+                  properties:
+                    sig:
+                      type: string
+      responses:
+        "200":
+          description: Created case
+  /recovery-cases/{caseId}:
+    get:
+      summary: Fetch a recovery case and its transactions
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Recovery case detail
+  /recovery-cases/{jrcHash}/court-order:
+    patch:
+      summary: Attach signed court-order metadata to a recovery case
+      parameters:
+        - name: jrcHash
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [courtInfo, sig]
+              properties:
+                courtInfo:
+                  $ref: "#/components/schemas/CourtInfo"
+                sig:
+                  type: string
+      responses:
+        "200":
+          description: Updated case
+  /estate-profiles/{ownerAddress}:
+    get:
+      summary: Fetch or initialize an estate profile
+      parameters:
+        - $ref: "#/components/parameters/OwnerAddress"
+      responses:
+        "200":
+          description: Estate profile
+  /estate-profiles/{ownerAddress}/agreement:
+    post:
+      summary: Record signed terms acceptance
+      parameters:
+        - $ref: "#/components/parameters/OwnerAddress"
+      responses:
+        "200":
+          description: Updated estate profile
+  /estate-profiles/{ownerAddress}/beneficiaries:
+    post:
+      summary: Add a signed beneficiary
+      parameters:
+        - $ref: "#/components/parameters/OwnerAddress"
+      responses:
+        "201":
+          description: Updated estate profile
+  /estate-profiles/{ownerAddress}/beneficiaries/{beneficiaryId}:
+    patch:
+      summary: Update a signed beneficiary
+      parameters:
+        - $ref: "#/components/parameters/OwnerAddress"
+        - name: beneficiaryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated estate profile
+components:
+  parameters:
+    OwnerAddress:
+      name: ownerAddress
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^0x[a-fA-F0-9]{40}$"
+  schemas:
+    RecoveryIntent:
+      type: object
+      required: [rec, txs]
+      properties:
+        rec:
+          type: object
+          required: [lostAccount, recoveryAccount, chainId, reasonForRecovery, email]
+          properties:
+            lostAccount:
+              type: string
+            recoveryAccount:
+              type: string
+            chainId:
+              type: integer
+            reasonForRecovery:
+              enum: ["lost key", "inheritance", "other"]
+            email:
+              type: [string, "null"]
+        txs:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [dest, value, data]
+            properties:
+              dest:
+                type: string
+              value:
+                type: string
+              data:
+                type: string
+    CourtInfo:
+      type: object
+      required: [title, fullCaseNumber, courtId, docketNumber]
+      properties:
+        title:
+          type: [string, "null"]
+        fullCaseNumber:
+          type: [string, "null"]
+        courtId:
+          type: [string, "null"]
+        docketNumber:
+          type: [integer, "null"]

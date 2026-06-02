@@ -1,0 +1,135 @@
+---
+title: "API Quickstart"
+description: "Create and track a Jurat recovery case with direct REST API calls."
+---
+
+Base URL:
+
+```txt
+https://api.jurat.io/api/v1
+```
+
+The API is versioned under `/api/v1`. Recovery and estate endpoints use wallet signatures to prove user intent.
+
+## 1. Build A Recovery Intent
+
+```ts
+const intent = {
+  rec: {
+    lostAccount: "0xLostSmartAccount",
+    recoveryAccount: "0xRecoveryWallet",
+    chainId: 8453,
+    reasonForRecovery: "lost key",
+    email: "user@example.com",
+  },
+  txs: [
+    {
+      dest: "0xTokenContract",
+      value: "0",
+      data: "0xEncodedCallData",
+    },
+  ],
+};
+```
+
+`txs` are the exact transactions Jurat should execute if the court order is verified.
+
+## 2. Calculate The JRC Hash
+
+```ts
+const response = await fetch("https://api.jurat.io/api/v1/recovery-cases/jrc-hash", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(intent),
+});
+
+const { jrcHash } = await response.json();
+```
+
+The returned `jrcHash` is the Jurat Legal Code hash the user includes in the legal filing.
+
+## 3. Check For An Existing Case
+
+```ts
+const response = await fetch("https://api.jurat.io/api/v1/recovery-cases/exists", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(intent),
+});
+
+const duplicate = await response.json();
+```
+
+Example response:
+
+```json
+{
+  "caseExists": true,
+  "caseId": "case-uuid",
+  "jrcHash": "0x..."
+}
+```
+
+## 4. Create A Recovery Case
+
+The recovery wallet signs the canonical recovery intent message. Use the SDK signing helper whenever possible.
+
+```ts
+const signedIntent = {
+  ...intent,
+  sig: "0xRecoveryWalletSignature",
+};
+
+const response = await fetch("https://api.jurat.io/api/v1/recovery-cases", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(signedIntent),
+});
+
+const created = await response.json();
+```
+
+Example response:
+
+```json
+{
+  "caseId": "case-uuid",
+  "jrcHash": "0x..."
+}
+```
+
+## 5. Submit Court Metadata
+
+After the court order exists, the recovery wallet signs the court metadata.
+
+```ts
+const payload = {
+  courtInfo: {
+    title: null,
+    fullCaseNumber: "1:26-cv-00001",
+    courtId: "candc",
+    docketNumber: 42,
+  },
+  sig: "0xRecoveryWalletSignature",
+};
+
+await fetch(`https://api.jurat.io/api/v1/recovery-cases/${created.jrcHash}/court-order`, {
+  method: "PATCH",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload),
+});
+```
+
+## 6. Track Status
+
+```ts
+const response = await fetch(`https://api.jurat.io/api/v1/recovery-cases/${created.caseId}`);
+const detail = await response.json();
+```
+
+Statuses:
+
+- `initiated`: case created, court metadata not yet submitted.
+- `pending`: court metadata submitted and awaiting verification.
+- `rejected`: recovery rejected.
+- `executed`: recovery verified and executed on-chain.

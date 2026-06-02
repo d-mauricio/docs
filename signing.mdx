@@ -1,0 +1,96 @@
+---
+title: "Signing"
+description: "Understand the wallet signatures required by Jurat recovery and probate endpoints."
+---
+
+Jurat uses wallet signatures to prove user intent.
+
+## Current Signing Model
+
+The current implementation verifies `personal_sign` style messages. The SDK contains helpers that build the exact strings expected by the backend.
+
+Use the SDK helpers instead of manually constructing messages.
+
+## Recovery Case Creation
+
+Signer:
+
+```txt
+recoveryAccount
+```
+
+Message:
+
+```txt
+From: {lostAccount}; to: {recoveryAccount}; chain ID: {chainId}; reason: {reasonForRecovery}; email: {email}; txs: {JSON.stringify(txs)}
+```
+
+SDK helper:
+
+```ts
+signRecoveryIntent(signer, intent)
+```
+
+## Court Metadata
+
+Signer:
+
+```txt
+recoveryAccount
+```
+
+Message:
+
+```txt
+Case number: {fullCaseNumber}; court ID: {courtId}; docket number: {docketNumber}
+```
+
+SDK helper:
+
+```ts
+signCourtInfo(signer, courtInfo)
+```
+
+## Beneficiary
+
+Signer:
+
+```txt
+ownerAddress
+```
+
+Message:
+
+```txt
+Owner: {ownerAddress}; smart account address: {smartAccountAddress}; beneficiary: {name surname}; beneficiary ID: {usCitizenId}; beneficiary email: {email}
+```
+
+SDK helper:
+
+```ts
+signBeneficiary(signer, beneficiary)
+```
+
+## Privacy Code
+
+Signer:
+
+```txt
+ownerAddress
+```
+
+Message:
+
+```txt
+Owner: {ownerAddress}; Jurat wallet: {juratWalletAddress}; privacy code name: {name}; privacy code state: {state}
+```
+
+SDK helper:
+
+```ts
+signPrivacyCode(signer, privacyCode)
+```
+
+## Typed Data
+
+Jurat plans to support EIP-712 typed data for structured wallet prompts and deterministic signing across SDKs and wallet providers.
