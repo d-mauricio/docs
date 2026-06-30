@@ -7,9 +7,9 @@ Jurat uses wallet signatures to prove user intent.
 
 ## Current Signing Model
 
-The current implementation verifies `personal_sign` style messages. The SDK contains helpers that build the exact strings expected by the backend.
+The current implementation uses EIP-712 typed data for recovery case creation, court metadata, and privacy-code creation. Terms acceptance and will upload still use signed messages.
 
-Use the SDK helpers instead of manually constructing messages.
+Until the SDK is published, reproduce these typed-data and message shapes exactly.
 
 ## Recovery Case Creation
 
@@ -19,13 +19,38 @@ Signer:
 recoveryAccount
 ```
 
-Message:
+Domain:
 
-```txt
-From: {lostAccount}; to: {recoveryAccount}; chain ID: {chainId}; reason: {reasonForRecovery}; email: {email}; txs: {JSON.stringify(txs)}
+```ts
+{
+  name: "Jurat Signature Domain Name",
+  version: "1.0.0",
+  chainId,
+  verifyingContract: lostAccount,
+}
 ```
 
-SDK helper:
+Typed data:
+
+```ts
+{
+  tx: [
+    { name: "dest", type: "address" },
+    { name: "value", type: "uint256" },
+    { name: "data", type: "bytes" },
+  ],
+  caseData: [
+    { name: "lostAccount", type: "address" },
+    { name: "recoveryAccount", type: "address" },
+    { name: "chainId", type: "uint256" },
+    { name: "reason", type: "string" },
+    { name: "email", type: "string" },
+    { name: "txs", type: "tx[]" },
+  ],
+}
+```
+
+Planned SDK helper:
 
 ```ts
 signRecoveryIntent(signer, intent)
@@ -39,19 +64,31 @@ Signer:
 recoveryAccount
 ```
 
-Message:
-
-```txt
-Case number: {fullCaseNumber}; court ID: {courtId}; docket number: {docketNumber}
-```
-
-SDK helper:
+Domain:
 
 ```ts
-signCourtInfo(signer, courtInfo)
+{
+  name: "Jurat Signature Domain Name",
+  version: "1.0.0",
+  chainId,
+  verifyingContract: lostAccount,
+}
 ```
 
-## Beneficiary
+Typed data:
+
+```ts
+{
+  data: [
+    { name: "title", type: "string" },
+    { name: "fullCaseNumber", type: "string" },
+    { name: "courtId", type: "string" },
+    { name: "docketNumber", type: "uint256" },
+  ],
+}
+```
+
+## Terms Agreement
 
 Signer:
 
@@ -62,13 +99,7 @@ ownerAddress
 Message:
 
 ```txt
-Owner: {ownerAddress}; smart account address: {smartAccountAddress}; beneficiary: {name surname}; beneficiary ID: {usCitizenId}; beneficiary email: {email}
-```
-
-SDK helper:
-
-```ts
-signBeneficiary(signer, beneficiary)
+JSON.stringify(termSections)
 ```
 
 ## Privacy Code
@@ -79,18 +110,50 @@ Signer:
 ownerAddress
 ```
 
-Message:
+Domain:
 
-```txt
-Owner: {ownerAddress}; Jurat wallet: {juratWalletAddress}; privacy code name: {name}; privacy code state: {state}
+```ts
+{
+  name: "Jurat Signature Domain Name",
+  version: "1.0.0",
+  chainId: 0,
+  verifyingContract: "0x0000000000000000000000000000000000000000",
+}
 ```
 
-SDK helper:
+Typed data:
+
+```ts
+{
+  data: [
+    { name: "signer", type: "address" },
+    { name: "juratWalletAddress", type: "address" },
+    { name: "name", type: "string" },
+    { name: "state", type: "string" },
+  ],
+}
+```
+
+Planned SDK helper:
 
 ```ts
 signPrivacyCode(signer, privacyCode)
 ```
 
-## Typed Data
+## Will Upload
 
-Jurat plans to support EIP-712 typed data for structured wallet prompts and deterministic signing across SDKs and wallet providers.
+Signer:
+
+```txt
+ownerAddress
+```
+
+Message:
+
+```txt
+JSON.stringify(fileBuffer)
+```
+
+The uploaded file and signed file buffer must match exactly.
+
+Use the future SDK helpers where available so wallet prompts and backend verification stay aligned.

@@ -1,0 +1,93 @@
+---
+title: "Authentication And API Keys"
+description: "Create developer accounts, issue API credentials, and authenticate Jurat API calls."
+---
+
+Jurat supports three authentication paths:
+
+- Wallet signatures for user-owned recovery and probate records.
+- Developer sessions for the hosted developer dashboard.
+- API key headers for server-side partner integrations.
+
+## Developer Dashboard
+
+Use the hosted app's developer section to create a developer account and manage credentials:
+
+```txt
+https://app.jurat.io/developers
+```
+
+The dashboard lets a developer:
+
+- Register or sign in with email and password.
+- Create up to five active API keys.
+- Copy the API key secret once at creation time.
+- Revoke keys that should no longer be accepted.
+
+## Password Requirements
+
+Developer passwords must be 8 to 32 characters and include:
+
+- One uppercase letter.
+- One lowercase letter.
+- One number.
+- One special character.
+
+## API Key Authentication
+
+Server-side integrations should send both API key headers:
+
+```http
+x-api-key: sk_...
+x-api-secret: ss_...
+```
+
+Example:
+
+```ts
+const response = await fetch("https://api.jurat.io/api/v1/recovery-cases", {
+  method: "GET",
+  headers: {
+    "x-api-key": process.env.JURAT_API_KEY!,
+    "x-api-secret": process.env.JURAT_API_SECRET!,
+  },
+});
+```
+
+The secret is only shown when the key is created. Store it like any other production secret.
+
+## Browser Integrations
+
+Do not expose `x-api-secret` in browser code.
+
+For browser-based wallet apps, either:
+
+- Link users to `https://app.jurat.io`.
+- Use wallet-signature endpoints directly from an allowlisted origin.
+- Proxy privileged calls through your own backend.
+
+Browser origins must be allowlisted by Jurat before they can call the API directly.
+
+## Hosted App Proxy
+
+The hosted Jurat app uses same-origin Next.js API routes for dashboard and wallet calls. Those routes forward to the recovery backend and keep `UI_CLIENT_ID`, `UI_CLIENT_SECRET`, cookies, and developer credentials on the server side.
+
+Use this pattern if you embed Jurat flows in a browser app and need a private server-side hop.
+
+## Session Endpoints
+
+Developer dashboard sessions use HTTP-only cookies:
+
+```http
+POST /auth/register
+POST /auth/login
+GET /auth/me
+```
+
+Anonymous hosted-app sessions use:
+
+```http
+POST /auth/issue-anon-jwt
+```
+
+`issue-anon-jwt` is for Jurat-owned UI clients. It requires `UI_CLIENT_ID` and `UI_CLIENT_SECRET` and should not be called directly from public browser code.

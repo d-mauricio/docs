@@ -8,14 +8,15 @@ Jurat gives wallets and web3 applications a recovery and probate layer for self-
 You can integrate Jurat in three ways:
 
 - Link users to the hosted app at [app.jurat.io](https://app.jurat.io).
-- Use the TypeScript SDK to embed Jurat flows in your own wallet or app.
 - Call the `/api/v1` endpoints directly from your frontend or backend.
+- Use the planned TypeScript SDK after the API contract is finalized and the SDK package is published.
 
 ## What Jurat Provides
 
 - Recovery case APIs for Jurat Legal Code creation, duplicate checks, court metadata submission, and case status tracking.
-- Estate and probate APIs for estate profiles, beneficiaries, privacy codes, terms acceptance, and will uploads.
-- A TypeScript SDK that wraps API calls and builds the canonical wallet-signature messages expected by the backend.
+- Estate and probate APIs for estate profiles, privacy codes, terms acceptance, and will uploads.
+- Developer dashboard credentials for API-key based server integrations.
+- A planned TypeScript SDK that will wrap API calls and canonical wallet-signature messages after the API is finalized.
 
 ## Base URLs
 
@@ -49,13 +50,9 @@ https://app.jurat.io
 
 This is the fastest path if you want to support Jurat recovery and probate without building a custom user experience.
 
-### Embed Jurat With The SDK
+### Planned SDK
 
-Use the SDK to build Jurat flows inside your own app while relying on Jurat's backend for recovery case creation, probate records, court metadata, and fulfillment status.
-
-```bash
-npm install @jurat/recovery-sdk
-```
+Jurat will publish a TypeScript SDK after the API work is wrapped up. The SDK is expected to live in its own codebase and package, separate from the hosted app.
 
 ### Call The APIs Directly
 
@@ -68,11 +65,19 @@ Call the stable API namespaces directly:
 
 Direct API access is best for wallets, custodians, and account-abstraction providers with custom backend workflows.
 
+Server-side API integrations can use API keys issued from the hosted developer dashboard at:
+
+```txt
+https://app.jurat.io/developers
+```
+
+Read [Authentication And API Keys](/authentication) before storing or using production credentials.
+
 ## Signing Model
 
 Most public integration endpoints use wallet signatures to prove user intent.
 
-The SDK expects this minimal signer interface:
+The planned SDK is expected to use this minimal signer interface:
 
 ```ts
 type JuratSigner = {
@@ -96,13 +101,13 @@ The recovery flow has three phases:
 Estate profiles let users prepare probate information connected to a wallet:
 
 - Fetch or create an estate profile.
-- Add signed beneficiaries.
 - Create probate privacy codes.
 - Upload signed will documents.
 - Resolve privacy codes for probate discovery workflows.
 
 ## Next Steps
 
-- Start with the [SDK Quickstart](/sdk-quickstart) if you want to embed Jurat into a wallet or app.
 - Start with the [API Quickstart](/api-quickstart) if you want to call the API directly.
+- Read [Authentication And API Keys](/authentication) if you need server-side API credentials.
 - Read [Signing](/signing) before implementing direct API calls.
+- Review the [SDK Preview](/sdk-quickstart) only if you are planning a future embedded integration.

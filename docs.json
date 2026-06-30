@@ -16,6 +16,7 @@
             "group": "Get started",
             "pages": [
               "index",
+              "authentication",
               "api-quickstart",
               "sdk-quickstart"
             ]

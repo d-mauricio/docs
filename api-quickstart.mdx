@@ -11,6 +11,15 @@ https://api.jurat.io/api/v1
 
 The API is versioned under `/api/v1`. Recovery and estate endpoints use wallet signatures to prove user intent.
 
+For server-side integrations, issue credentials from the developer dashboard and send them with API requests:
+
+```http
+x-api-key: sk_...
+x-api-secret: ss_...
+```
+
+Do not expose API secrets in browser code.
+
 ## 1. Build A Recovery Intent
 
 ```ts
@@ -72,17 +81,22 @@ Example response:
 
 ## 4. Create A Recovery Case
 
-The recovery wallet signs the canonical recovery intent message. Use the SDK signing helper whenever possible.
+The recovery wallet signs the canonical EIP-712 recovery intent. Until the SDK is published, reproduce the typed-data shape in [Signing](/signing) exactly.
 
 ```ts
 const signedIntent = {
-  ...intent,
-  sig: "0xRecoveryWalletSignature",
+  case: intent.rec,
+  transactions: intent.txs,
+  signature: "0xRecoveryWalletSignature",
 };
 
-const response = await fetch("https://api.jurat.io/api/v1/recovery-cases", {
+const response = await fetch("https://api.jurat.io/api/v1/recovery-cases/new-case", {
   method: "POST",
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-key": process.env.JURAT_API_KEY!,
+    "x-api-secret": process.env.JURAT_API_SECRET!,
+  },
   body: JSON.stringify(signedIntent),
 });
 
@@ -105,12 +119,12 @@ After the court order exists, the recovery wallet signs the court metadata.
 ```ts
 const payload = {
   courtInfo: {
-    title: null,
+    title: "Order granting recovery",
     fullCaseNumber: "1:26-cv-00001",
-    courtId: "candc",
+    courtId: "California Northern District Court",
     docketNumber: 42,
   },
-  sig: "0xRecoveryWalletSignature",
+  signature: "0xRecoveryWalletSignature",
 };
 
 await fetch(`https://api.jurat.io/api/v1/recovery-cases/${created.jrcHash}/court-order`, {
@@ -133,3 +147,13 @@ Statuses:
 - `pending`: court metadata submitted and awaiting verification.
 - `rejected`: recovery rejected.
 - `executed`: recovery verified and executed on-chain.
+
+## Dashboard And Credentials
+
+Create and revoke developer API keys from:
+
+```txt
+https://app.jurat.io/developers
+```
+
+Each developer account can have up to five active API keys. The API secret is returned only when a key is created.

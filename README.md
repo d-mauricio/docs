@@ -1,6 +1,6 @@
 # Jurat Developer Docs
 
-Mintlify documentation for the Jurat Recovery API and SDK.
+Mintlify documentation for the Jurat Recovery API and planned SDK.
 
 ## Local Preview
 

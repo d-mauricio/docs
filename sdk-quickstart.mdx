@@ -1,18 +1,18 @@
 ---
-title: "SDK Quickstart"
-description: "Use the Jurat TypeScript SDK to create recovery and probate workflows."
+title: "SDK Preview"
+description: "Preview the planned Jurat TypeScript SDK shape before the package is published."
 ---
 
-Install the SDK:
+The Jurat SDK is not published yet.
 
-```bash
-npm install @jurat/recovery-sdk
-```
+Jurat plans to publish the SDK after the API contract is finalized. The SDK should live in its own codebase and package, separate from the hosted app.
+
+For current integrations, use the REST API directly and follow the [Signing](/signing) guide. The examples below show the expected SDK direction, not an installable package.
 
 ## 1. Create A Client
 
 ```ts
-import { JuratRecoveryClient } from "@jurat/recovery-sdk";
+import { JuratRecoveryClient } from "@jurat/recovery-sdk"; // planned package
 
 const jurat = new JuratRecoveryClient({
   baseUrl: "https://api.jurat.io/api/v1",
@@ -21,7 +21,7 @@ const jurat = new JuratRecoveryClient({
 
 ## 2. Provide A Signer
 
-The SDK accepts a minimal signer interface:
+The planned SDK should accept a minimal signer interface:
 
 ```ts
 type JuratSigner = {
@@ -47,7 +47,7 @@ This shape works with ethers, viem, wagmi, Privy, embedded wallets, and custody 
 import {
   encodeErc20Transfer,
   signRecoveryIntent,
-} from "@jurat/recovery-sdk";
+} from "@jurat/recovery-sdk"; // planned package
 
 const intent = {
   rec: {
@@ -78,7 +78,7 @@ if (!duplicate.caseExists) {
 ## 4. Submit Court Metadata
 
 ```ts
-import { signCourtInfo } from "@jurat/recovery-sdk";
+import { signCourtInfo } from "@jurat/recovery-sdk"; // planned package
 
 const courtInfo = {
   title: null,
@@ -106,25 +106,23 @@ console.log(detail.recovery?.txHash);
 const profile = await jurat.getEstateProfile(signer.address);
 ```
 
-## 7. Add A Beneficiary
+## 7. Create A Privacy Code
 
 ```ts
-import { signBeneficiary } from "@jurat/recovery-sdk";
+import { signPrivacyCode } from "@jurat/recovery-sdk"; // planned package
 
-const beneficiary = await signBeneficiary(signer, {
-  name: "Jane",
-  surname: "Doe",
-  smartAccountAddress: "0xBeneficiarySmartAccount",
-  usCitizenId: "123456789",
-  email: "beneficiary@example.com",
+const privacyCode = await signPrivacyCode(signer, {
+  juratWalletAddress: signer.address,
+  name: "Estate plan",
+  state: "California",
 });
 
-await jurat.createBeneficiary(signer.address, beneficiary);
+await jurat.createPrivacyCode(signer.address, privacyCode);
 ```
 
 ## Error Handling
 
-SDK methods throw `Error` when the API returns a non-2xx response.
+Future SDK methods should throw `Error` when the API returns a non-2xx response.
 
 ```ts
 try {
@@ -133,3 +131,5 @@ try {
   console.error(error);
 }
 ```
+
+Backend errors include a stable code and request ID when raised through the structured error handler. Log the `requestId` when asking Jurat support to investigate an API failure.

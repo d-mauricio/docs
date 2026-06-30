@@ -5,38 +5,45 @@ description: "Handle Jurat API errors and recovery status notifications."
 
 ## Error Shape
 
-Current responses may include:
+Structured API errors use this shape:
 
 ```json
 {
-  "error": "Request failed"
+  "error": {
+    "code": "INVALID_SIGNER",
+    "message": "Invalid signer",
+    "requestId": "req_abc123"
+  }
 }
 ```
 
-or:
+Some validation errors may also include a `details` array.
 
-```json
-{
-  "reason": "Invalid signer"
-}
-```
-
-SDK methods throw an `Error` using the backend-provided `error` or `reason` value when available.
+Future SDK methods should throw an `Error` when the API returns a non-2xx response. Log the backend `requestId` when support needs to trace a request.
 
 ## Common Error Codes
 
 Jurat API errors may include codes such as:
 
-- `INVALID_SIGNATURE`
-- `VALIDATION_ERROR`
-- `CASE_NOT_FOUND`
-- `CASE_ALREADY_EXISTS`
-- `CASE_NOT_INITIATED`
-- `CASE_NOT_PENDING`
-- `UNSUPPORTED_CHAIN`
-- `RATE_LIMITED`
+- `INVALID_SIGNER`
+- `INVALID_AUTH`
+- `INVALID_TOKEN`
+- `EXPIRED_TOKEN`
+- `INVALID_PASSWORD`
 - `UNAUTHORIZED`
-- `INTERNAL_ERROR`
+- `INPUT_VALIDATION_ERROR`
+- `NO_RECOVERY_CASE_TXS`
+- `RECOVERY_STATUS_ERROR`
+- `UNMATCHED_JRC_HASH`
+- `API_KEY_NOT_FOUND`
+- `EXCEEDED_API_KEY_AMOUNT`
+- `USER_FOUND`
+- `USER_NOT_FOUND`
+- `RESOURCE_NOT_FOUND`
+- `NO_FILE_UPLOADED`
+- `INVALID_FILE_FORMAT`
+- `NO_FILE_BUFFER`
+- `INTERNAL_SERVER_ERROR`
 
 ## Webhooks
 

@@ -15,9 +15,122 @@ paths:
       responses:
         "200":
           description: Service is available
+  /auth/register:
+    post:
+      summary: Register a developer user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthCredentials"
+      responses:
+        "201":
+          description: Developer user created
+        "400":
+          $ref: "#/components/responses/ApiError"
+  /auth/login:
+    post:
+      summary: Create a developer session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthCredentials"
+      responses:
+        "200":
+          description: Session cookie issued
+        "401":
+          $ref: "#/components/responses/ApiError"
+  /auth/me:
+    get:
+      summary: Fetch the current developer session
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Current developer user
+        "401":
+          $ref: "#/components/responses/ApiError"
+  /auth/issue-anon-jwt:
+    post:
+      summary: Issue an anonymous hosted-app session
+      description: For Jurat-owned UI clients. Do not call this directly from public browser code.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [clientId, clientSecret]
+              properties:
+                clientId:
+                  type: string
+                clientSecret:
+                  type: string
+      responses:
+        "200":
+          description: Anonymous session cookie issued
+        "400":
+          $ref: "#/components/responses/ApiError"
+  /auth/api-keys:
+    get:
+      summary: List developer API keys
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Active API keys
+    post:
+      summary: Issue a developer API key
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label]
+              properties:
+                label:
+                  type: string
+                  minLength: 3
+                  maxLength: 128
+      responses:
+        "200":
+          description: API key and one-time secret
+    delete:
+      summary: Revoke a developer API key
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [keyId]
+              properties:
+                keyId:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Remaining active API keys
   /recovery-cases/jrc-hash:
     post:
       summary: Calculate the expected JRC hash
+      security:
+        - apiKeyAuth: []
+          apiSecretAuth: []
+        - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -30,6 +143,11 @@ paths:
   /recovery-cases/exists:
     post:
       summary: Check whether a recovery intent already exists
+      security:
+        - apiKeyAuth: []
+          apiSecretAuth: []
+        - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -42,29 +160,39 @@ paths:
   /recovery-cases:
     get:
       summary: List recovery cases
+      security:
+        - apiKeyAuth: []
+          apiSecretAuth: []
+        - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Recovery cases
+  /recovery-cases/new-case:
     post:
       summary: Create a signed recovery case
+      security:
+        - apiKeyAuth: []
+          apiSecretAuth: []
+        - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              allOf:
-                - $ref: "#/components/schemas/RecoveryIntent"
-                - type: object
-                  required: [sig]
-                  properties:
-                    sig:
-                      type: string
+              $ref: "#/components/schemas/SignedRecoveryCase"
       responses:
         "200":
           description: Created case
   /recovery-cases/{caseId}:
     get:
       summary: Fetch a recovery case and its transactions
+      security:
+        - apiKeyAuth: []
+          apiSecretAuth: []
+        - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: caseId
           in: path
@@ -77,6 +205,11 @@ paths:
   /recovery-cases/{jrcHash}/court-order:
     patch:
       summary: Attach signed court-order metadata to a recovery case
+      security:
+        - apiKeyAuth: []
+          apiSecretAuth: []
+        - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: jrcHash
           in: path
@@ -89,11 +222,11 @@ paths:
           application/json:
             schema:
               type: object
-              required: [courtInfo, sig]
+              required: [courtInfo, signature]
               properties:
                 courtInfo:
                   $ref: "#/components/schemas/CourtInfo"
-                sig:
+                signature:
                   type: string
       responses:
         "200":
@@ -101,6 +234,11 @@ paths:
   /estate-profiles/{ownerAddress}:
     get:
       summary: Fetch or initialize an estate profile
+      security:
+        - apiKeyAuth: []
+          apiSecretAuth: []
+        - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/OwnerAddress"
       responses:
@@ -109,33 +247,79 @@ paths:
   /estate-profiles/{ownerAddress}/agreement:
     post:
       summary: Record signed terms acceptance
+      security:
+        - apiKeyAuth: []
+          apiSecretAuth: []
+        - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/OwnerAddress"
       responses:
         "200":
           description: Updated estate profile
-  /estate-profiles/{ownerAddress}/beneficiaries:
+  /estate-profiles/{ownerAddress}/privacy-codes:
     post:
-      summary: Add a signed beneficiary
+      summary: Create a signed probate privacy code
       parameters:
         - $ref: "#/components/parameters/OwnerAddress"
+      security:
+        - apiKeyAuth: []
+          apiSecretAuth: []
+        - bearerAuth: []
+        - cookieAuth: []
       responses:
         "201":
           description: Updated estate profile
-  /estate-profiles/{ownerAddress}/beneficiaries/{beneficiaryId}:
-    patch:
-      summary: Update a signed beneficiary
+  /estate-profiles/privacy-codes/resolve:
+    post:
+      summary: Resolve a probate privacy code
+      security:
+        - apiKeyAuth: []
+          apiSecretAuth: []
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Privacy code record
+  /estate-profiles/{ownerAddress}/will:
+    post:
+      summary: Upload a signed will document
       parameters:
         - $ref: "#/components/parameters/OwnerAddress"
-        - name: beneficiaryId
-          in: path
-          required: true
-          schema:
-            type: string
+      security:
+        - apiKeyAuth: []
+          apiSecretAuth: []
+        - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Updated estate profile
 components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Send `x-api-key` together with `x-api-secret`.
+    apiSecretAuth:
+      type: apiKey
+      in: header
+      name: x-api-secret
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+  responses:
+    ApiError:
+      description: Structured API error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
   parameters:
     OwnerAddress:
       name: ownerAddress
@@ -145,6 +329,41 @@ components:
         type: string
         pattern: "^0x[a-fA-F0-9]{40}$"
   schemas:
+    AuthCredentials:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 32
+          description: Must include uppercase, lowercase, number, and special character.
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            requestId:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
     RecoveryIntent:
       type: object
       required: [rec, txs]
@@ -176,6 +395,16 @@ components:
                 type: string
               data:
                 type: string
+    SignedRecoveryCase:
+      type: object
+      required: [case, transactions, signature]
+      properties:
+        case:
+          $ref: "#/components/schemas/RecoveryIntent/properties/rec"
+        transactions:
+          $ref: "#/components/schemas/RecoveryIntent/properties/txs"
+        signature:
+          type: string
     CourtInfo:
       type: object
       required: [title, fullCaseNumber, courtId, docketNumber]
